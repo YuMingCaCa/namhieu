@@ -54,6 +54,35 @@
         .currency-input {
             -moz-appearance: textfield;
         }
+        .settle-btn {
+            background-color: #10b981; /* emerald-500 */
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            font-size: 0.875rem;
+        }
+        .settle-btn:hover {
+            background-color: #059669; /* emerald-600 */
+        }
+        .details-summary::-webkit-details-marker {
+             display: none;
+        }
+        .details-summary {
+            list-style-type: none;
+        }
+        .print-btn {
+            background-color: #06b6d4; /* cyan-500 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .print-btn:hover {
+            background-color: #0891b2; /* cyan-600 */
+        }
     </style>
 </head>
 <body class="antialiased text-gray-800">
@@ -75,7 +104,7 @@
             <div class="mb-6 border-b border-gray-200">
                 <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
                     <button class="tab-btn active" data-tab="trips">Quản Lý Chuyến</button>
-                    <button class="tab-btn" data-tab="finance">Tổng Quan Tài Chính</button>
+                    <button class="tab-btn" data-tab="finance">Báo Cáo Tài Chính</button>
                     <button class="tab-btn" data-tab="customers">Khách Hàng</button>
                     <button class="tab-btn" data-tab="drivers">Tài Xế</button>
                     <button class="tab-btn" data-tab="tractors">Đầu Kéo</button>
@@ -91,19 +120,27 @@
                         <h2 class="text-xl font-semibold">Danh Sách Chuyến Hàng</h2>
                         <button id="add-trip-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">+ Thêm Chuyến Mới</button>
                     </div>
-                    <input type="text" id="search-trips" placeholder="Tìm kiếm chuyến..." class="w-full sm:w-1/3 mb-4 p-2 border rounded-lg">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <input type="text" id="search-trips" placeholder="Tìm kiếm cont, tuyến..." class="p-2 border rounded-lg lg:col-span-1">
+                        <select id="customer-filter" class="p-2 border rounded-lg"><option value="">Tất cả khách hàng</option></select>
+                        <select id="driver-filter" class="p-2 border rounded-lg"><option value="">Tất cả tài xế</option></select>
+                        <select id="tractor-filter" class="p-2 border rounded-lg"><option value="">Tất cả đầu kéo</option></select>
+                    </div>
                     <div class="bg-white shadow-lg rounded-lg overflow-hidden">
                         <div class="table-container">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50 sticky top-0 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Số Cont</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khách Hàng</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tuyến Đường</th>
-                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cước Phí</th>
-                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Lợi Nhuận</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Hành Động</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Số Cont</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khách Hàng</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tuyến Đường</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày Đi</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày Về</th>
+                                        <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cước Phí</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng Thái Cước</th>
+                                        <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase">Lợi Nhuận</th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">Hành Động</th>
                                     </tr>
                                 </thead>
                                 <tbody id="trips-table-body" class="bg-white divide-y divide-gray-200"></tbody>
@@ -114,19 +151,63 @@
 
                 <!-- Finance View -->
                 <div id="finance-view" class="tab-content hidden">
-                    <h2 class="text-xl font-semibold mb-4">Tổng Quan Tài Chính</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-sm font-medium text-gray-500">Tổng Doanh Thu</h3>
-                            <p id="total-revenue" class="mt-1 text-3xl font-semibold text-green-600">0 VNĐ</p>
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                        <h2 class="text-xl font-semibold">Báo Cáo Tài Chính</h2>
+                        <div class="flex items-center gap-4">
+                            <input type="month" id="report-month-filter" class="p-2 border rounded-lg">
+                            <button id="print-report-btn" class="print-btn flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16">
+                                    <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm4 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                    <path d="M11 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V4zM7 7a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7z"/>
+                                </svg>
+                                In Báo Cáo
+                            </button>
                         </div>
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-sm font-medium text-gray-500">Tổng Chi Phí</h3>
-                            <p id="total-expenses" class="mt-1 text-3xl font-semibold text-red-600">0 VNĐ</p>
+                    </div>
+                    <div id="report-content">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-sm font-medium text-gray-500">Tổng Doanh Thu</h3>
+                                <p id="total-revenue" class="mt-1 text-3xl font-semibold text-green-600">0 VNĐ</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-sm font-medium text-gray-500">Tổng Chi Phí</h3>
+                                <p id="total-expenses" class="mt-1 text-3xl font-semibold text-red-600">0 VNĐ</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-sm font-medium text-gray-500">Tổng Lợi Nhuận</h3>
+                                <p id="total-profit" class="mt-1 text-3xl font-semibold text-blue-600">0 VNĐ</p>
+                            </div>
                         </div>
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-sm font-medium text-gray-500">Tổng Lợi Nhuận</h3>
-                            <p id="total-profit" class="mt-1 text-3xl font-semibold text-blue-600">0 VNĐ</p>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Accounts Receivable Report -->
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold text-yellow-700">Công Nợ Phải Thu</h3>
+                                </div>
+                                <div id="receivable-report" class="space-y-2">
+                                    <!-- Receivable data will be injected here -->
+                                </div>
+                            </div>
+
+                            <!-- Accounts Payable Report -->
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold text-orange-700">Công Nợ Phải Trả</h3>
+                                </div>
+                                <div id="payable-report" class="space-y-2">
+                                    <!-- Payable data will be injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+                         <!-- Expense Breakdown Report -->
+                        <div class="bg-white p-6 rounded-lg shadow mt-8">
+                             <h3 class="text-lg font-semibold text-gray-700 mb-4">Phân Tích Chi Phí Chi Tiết</h3>
+                             <div id="expense-breakdown-report">
+                                 <!-- Expense breakdown data will be injected here -->
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -254,11 +335,11 @@
     <!-- Confirmation Dialog -->
     <div id="confirm-dialog" class="modal-backdrop hidden">
         <div class="bg-white rounded-lg shadow-xl w-11/12 sm:w-1/3 p-6">
-            <h3 class="text-lg font-bold">Xác nhận xóa</h3>
-            <p class="my-4">Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.</p>
+            <h3 class="text-lg font-bold">Xác nhận</h3>
+            <p id="confirm-message" class="my-4">Bạn có chắc chắn muốn thực hiện hành động này?</p>
             <div class="flex justify-end space-x-3">
                 <button id="confirm-cancel-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Hủy</button>
-                <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Xóa</button>
+                <button id="confirm-action-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Xác nhận</button>
             </div>
         </div>
     </div>
@@ -267,15 +348,14 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, setDoc, getDoc, deleteDoc, onSnapshot, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, setDoc, getDoc, deleteDoc, onSnapshot, query, writeBatch, setLogLevel } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // --- Config and Initialization ---
-        // Your web app's Firebase configuration from your project
         const firebaseConfig = {
             apiKey: "AIzaSyDfEfoZ2T5p1f0xvj5MlQXmA_rPhMl9aok",
             authDomain: "vantainamhieu.firebaseapp.com",
             projectId: "vantainamhieu",
-            storageBucket: "vantainamhieu.appspot.com", // Corrected from firebasestorage.app
+            storageBucket: "vantainamhieu.appspot.com",
             messagingSenderId: "1095529198244",
             appId: "1:1095529198244:web:e4841ca7d431598c55ec31",
             measurementId: "G-ZPDSZYB6YX"
@@ -302,9 +382,13 @@
         const editIdInput = document.getElementById('edit-id');
         const modalTypeInput = document.getElementById('modal-type');
         const confirmDialog = document.getElementById('confirm-dialog');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmActionBtn = document.getElementById('confirm-action-btn');
+        const monthFilterInput = document.getElementById('report-month-filter');
+        const printReportBtn = document.getElementById('print-report-btn');
 
         // --- App State ---
-        let deleteResolver = null;
+        let actionResolver = null;
         const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 
         // --- UI / Tab Management ---
@@ -350,11 +434,21 @@
                                 <h3 class="text-lg font-medium text-gray-700 border-b pb-2">Thông Tin Chuyến Đi</h3>
                                 <input type="text" name="soCont" placeholder="Số Container" class="p-2 border rounded-md w-full" value="${data.soCont || ''}" required>
                                 <input type="text" name="tuyenDuong" placeholder="Tuyến đường (VD: HP - HN)" class="p-2 border rounded-md w-full" value="${data.tuyenDuong || ''}" required>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-600">Ngày đi</label>
+                                        <input type="date" name="ngayDi" class="p-2 border rounded-md w-full text-gray-500" value="${data.ngayDi || ''}">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-600">Ngày về</label>
+                                        <input type="date" name="ngayVe" class="p-2 border rounded-md w-full text-gray-500" value="${data.ngayVe || ''}">
+                                    </div>
+                                </div>
                                 <select name="customerId" class="p-2 border rounded-md w-full" required><option value="">-- Chọn Khách Hàng --</option>${customerOpts}</select>
                                 <select name="driverId" class="p-2 border rounded-md w-full" required><option value="">-- Chọn Tài Xế --</option>${driverOpts}</select>
                                 <select name="tractorId" class="p-2 border rounded-md w-full" required><option value="">-- Chọn Đầu Kéo --</option>${tractorOpts}</select>
                                 <select name="trailerId" class="p-2 border rounded-md w-full" required><option value="">-- Chọn Rơ-moóc --</option>${trailerOpts}</select>
-                                <textarea name="ghiChu" placeholder="Ghi Chú Chuyến Đi" class="p-2 border rounded-md w-full" rows="3">${data.ghiChu || ''}</textarea>
+                                <textarea name="ghiChu" placeholder="Ghi Chú Chuyến Đi" class="p-2 border rounded-md w-full" rows="2">${data.ghiChu || ''}</textarea>
                             </div>
                             <!-- Right Column -->
                             <div class="space-y-4">
@@ -382,6 +476,28 @@
                                 <div>
                                     <label class="text-sm font-medium text-gray-600">Chi phí phát sinh</label>
                                     <input type="number" name="chiPhiPhatSinh" placeholder="0" class="currency-input p-2 border rounded-md w-full" value="${data.chiPhiPhatSinh || ''}">
+                                </div>
+                                <h4 class="text-md font-medium text-gray-600 pt-4 border-t mt-2">Trạng Thái Thanh Toán</h4>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">Thanh toán cước</label>
+                                    <select name="paymentStatus" class="p-2 border rounded-md w-full">
+                                        <option value="Chưa thanh toán" ${data.paymentStatus === 'Chưa thanh toán' || !data.paymentStatus ? 'selected' : ''}>Chưa thanh toán</option>
+                                        <option value="Đã thanh toán" ${data.paymentStatus === 'Đã thanh toán' ? 'selected' : ''}>Đã thanh toán</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">Thanh toán xăng dầu</label>
+                                    <select name="fuelPaymentStatus" class="p-2 border rounded-md w-full">
+                                        <option value="Chưa thanh toán" ${data.fuelPaymentStatus === 'Chưa thanh toán' || !data.fuelPaymentStatus ? 'selected' : ''}>Chưa thanh toán</option>
+                                        <option value="Đã thanh toán" ${data.fuelPaymentStatus === 'Đã thanh toán' ? 'selected' : ''}>Đã thanh toán</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">Thanh toán lương</label>
+                                    <select name="salaryPaymentStatus" class="p-2 border rounded-md w-full">
+                                        <option value="Chưa thanh toán" ${data.salaryPaymentStatus === 'Chưa thanh toán' || !data.salaryPaymentStatus ? 'selected' : ''}>Chưa thanh toán</option>
+                                        <option value="Đã thanh toán" ${data.salaryPaymentStatus === 'Đã thanh toán' ? 'selected' : ''}>Đã thanh toán</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -435,32 +551,32 @@
         };
 
         const closeModal = () => modal.classList.add('hidden');
-        const showConfirmDialog = () => {
+        const showConfirmDialog = (message, actionButtonClass = 'bg-red-600', actionButtonHoverClass = 'hover:bg-red-700') => {
+            confirmMessage.textContent = message;
+            confirmActionBtn.className = `font-bold py-2 px-4 rounded-lg text-white ${actionButtonClass} ${actionButtonHoverClass}`;
             confirmDialog.classList.remove('hidden');
-            return new Promise(resolve => { deleteResolver = resolve; });
+            return new Promise(resolve => { actionResolver = resolve; });
         };
         const hideConfirmDialog = () => {
             confirmDialog.classList.add('hidden');
-            deleteResolver = null;
+            actionResolver = null;
         };
 
         // --- Data Rendering ---
-        const renderTable = (tbody, data, renderFn, filterTerm = '') => {
-            const searchTerm = filterTerm.toLowerCase();
-            const filteredData = data.filter(item => {
-                if (!searchTerm) return true;
-                const customer = allCustomers.find(c => c.id === item.customerId);
-                return Object.values(item).some(val => 
-                    typeof val === 'string' && val.toLowerCase().includes(searchTerm)
-                ) || (customer && customer.name.toLowerCase().includes(searchTerm));
-            });
+        const createStatusBadge = (status) => {
+            if (status === 'Đã thanh toán') {
+                return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Đã thanh toán</span>`;
+            }
+            return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Chưa thanh toán</span>`;
+        };
 
+        const renderTable = (tbody, data, renderFn) => {
             tbody.innerHTML = '';
-            if (filteredData.length === 0) {
+            if (data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="10" class="text-center p-8 text-gray-500">Không có dữ liệu.</td></tr>`;
                 return;
             }
-            filteredData.forEach((item, index) => {
+            data.forEach((item, index) => {
                 tbody.appendChild(renderFn(item, index));
             });
         };
@@ -477,15 +593,19 @@
                              (parseFloat(item.chiPhiCaXe) || 0) +
                              (parseFloat(item.chiPhiPhatSinh) || 0);
             const profit = revenue - expenses;
+            const status = item.paymentStatus || 'Chưa thanh toán';
 
             row.innerHTML = `
-                <td class="px-4 py-4 text-sm font-medium text-gray-900">${index + 1}</td>
-                <td class="px-4 py-4 text-sm text-gray-700">${item.soCont || ''}</td>
-                <td class="px-4 py-4 text-sm text-gray-700 font-semibold">${customer?.name || 'N/A'}</td>
-                <td class="px-4 py-4 text-sm text-gray-500">${item.tuyenDuong || ''}</td>
-                <td class="px-4 py-4 text-sm text-green-600 font-medium text-right">${currencyFormatter.format(revenue)}</td>
-                <td class="px-4 py-4 text-sm ${profit >= 0 ? 'text-blue-600' : 'text-red-600'} font-bold text-right">${currencyFormatter.format(profit)}</td>
-                <td class="px-4 py-4 text-center text-sm font-medium">
+                <td class="px-2 py-4 text-sm font-medium text-gray-900">${index + 1}</td>
+                <td class="px-2 py-4 text-sm text-gray-700">${item.soCont || ''}</td>
+                <td class="px-2 py-4 text-sm text-gray-700 font-semibold">${customer?.name || 'N/A'}</td>
+                <td class="px-2 py-4 text-sm text-gray-500">${item.tuyenDuong || ''}</td>
+                <td class="px-2 py-4 text-sm text-gray-500">${item.ngayDi || ''}</td>
+                <td class="px-2 py-4 text-sm text-gray-500">${item.ngayVe || ''}</td>
+                <td class="px-2 py-4 text-sm text-green-600 font-medium text-right">${currencyFormatter.format(revenue)}</td>
+                <td class="px-2 py-4 text-sm text-gray-500">${createStatusBadge(status)}</td>
+                <td class="px-2 py-4 text-sm ${profit >= 0 ? 'text-blue-600' : 'text-red-600'} font-bold text-right">${currencyFormatter.format(profit)}</td>
+                <td class="px-2 py-4 text-center text-sm font-medium">
                     <button class="edit-btn text-indigo-600 hover:text-indigo-900" data-type="trip" data-id="${item.id}">Sửa</button>
                     <button class="delete-btn text-red-600 hover:text-red-900 ml-4" data-type="trip" data-id="${item.id}">Xóa</button>
                 </td>
@@ -540,30 +660,171 @@
         }
 
         const updateFinanceDashboard = (trips) => {
+            const selectedMonth = monthFilterInput.value; // YYYY-MM
+            
+            const filteredTrips = selectedMonth 
+                ? trips.filter(trip => trip.ngayDi && trip.ngayDi.startsWith(selectedMonth))
+                : trips;
+
             let totalRevenue = 0;
             let totalExpenses = 0;
+            
+            const receivableByCustomer = {};
+            const payableSalaryByDriver = {};
+            let payableFuel = { amount: 0, tripIds: [] };
+            const expenseBreakdown = {
+                xangDau: 0,
+                veCauDuong: 0,
+                luong: 0,
+                caXe: 0,
+                phatSinh: 0,
+            };
 
-            trips.forEach(trip => {
+            filteredTrips.forEach(trip => {
                 const revenue = parseFloat(trip.cuocXe) || 0;
-                const expenses = (parseFloat(trip.chiPhiXangDau) || 0) +
-                                 (parseFloat(trip.chiPhiVe) || 0) +
-                                 (parseFloat(trip.chiPhiLuong) || 0) +
-                                 (parseFloat(trip.chiPhiCaXe) || 0) +
-                                 (parseFloat(trip.chiPhiPhatSinh) || 0);
+                const fuelCost = parseFloat(trip.chiPhiXangDau) || 0;
+                const salaryCost = parseFloat(trip.chiPhiLuong) || 0;
+                const tollCost = parseFloat(trip.chiPhiVe) || 0;
+                const yardCost = parseFloat(trip.chiPhiCaXe) || 0;
+                const otherCost = parseFloat(trip.chiPhiPhatSinh) || 0;
+
+                const expenses = fuelCost + salaryCost + tollCost + yardCost + otherCost;
+                
                 totalRevenue += revenue;
                 totalExpenses += expenses;
+
+                expenseBreakdown.xangDau += fuelCost;
+                expenseBreakdown.veCauDuong += tollCost;
+                expenseBreakdown.luong += salaryCost;
+                expenseBreakdown.caXe += yardCost;
+                expenseBreakdown.phatSinh += otherCost;
+
+
+                // Calculate Accounts Receivable
+                if (trip.paymentStatus !== 'Đã thanh toán' && trip.customerId) {
+                    if (!receivableByCustomer[trip.customerId]) {
+                        receivableByCustomer[trip.customerId] = { amount: 0, tripIds: [] };
+                    }
+                    receivableByCustomer[trip.customerId].amount += revenue;
+                    receivableByCustomer[trip.customerId].tripIds.push(trip.id);
+                }
+
+                // Calculate Accounts Payable
+                if (trip.fuelPaymentStatus !== 'Đã thanh toán') {
+                    payableFuel.amount += fuelCost;
+                    payableFuel.tripIds.push(trip.id);
+                }
+                if (trip.salaryPaymentStatus !== 'Đã thanh toán' && trip.driverId) {
+                     if (!payableSalaryByDriver[trip.driverId]) {
+                        payableSalaryByDriver[trip.driverId] = { amount: 0, tripIds: [] };
+                    }
+                    payableSalaryByDriver[trip.driverId].amount += salaryCost;
+                    payableSalaryByDriver[trip.driverId].tripIds.push(trip.id);
+                }
             });
             
             const totalProfit = totalRevenue - totalExpenses;
-
+            
+            // Update summary cards
             document.getElementById('total-revenue').textContent = currencyFormatter.format(totalRevenue);
             document.getElementById('total-expenses').textContent = currencyFormatter.format(totalExpenses);
             document.getElementById('total-profit').textContent = currencyFormatter.format(totalProfit);
+            
+            // Update detailed reports
+            const receivableReport = document.getElementById('receivable-report');
+            receivableReport.innerHTML = '';
+            if (Object.keys(receivableByCustomer).length === 0) {
+                receivableReport.innerHTML = '<p class="text-center p-4 text-gray-500">Không có công nợ phải thu.</p>';
+            } else {
+                for (const customerId in receivableByCustomer) {
+                    const customer = allCustomers.find(c => c.id === customerId);
+                    const detail = `
+                        <details class="bg-gray-50 rounded-lg">
+                            <summary class="details-summary p-3 cursor-pointer flex justify-between items-center">
+                                <span class="font-medium text-gray-800">${customer?.name || 'Khách lẻ'}</span>
+                                <div class="flex items-center space-x-4">
+                                    <span class="font-semibold text-yellow-600">${currencyFormatter.format(receivableByCustomer[customerId].amount)}</span>
+                                    <button class="settle-btn" data-type="receivable" data-id="${customerId}">Thanh Toán Hết</button>
+                                </div>
+                            </summary>
+                        </details>
+                    `;
+                    receivableReport.innerHTML += detail;
+                }
+            }
+
+            const payableReport = document.getElementById('payable-report');
+            payableReport.innerHTML = '';
+            let hasPayable = false;
+            if (payableFuel.amount > 0) {
+                 hasPayable = true;
+                 const detail = `
+                    <div class="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+                         <div>
+                            <p class="font-medium text-gray-800">Tiền xăng dầu</p>
+                            <p class="text-sm text-gray-500">Tất cả nhà cung cấp</p>
+                         </div>
+                         <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-orange-600">${currencyFormatter.format(payableFuel.amount)}</span>
+                            <button class="settle-btn" data-type="payable-fuel">Thanh Toán Hết</button>
+                        </div>
+                    </div>
+                 `;
+                payableReport.innerHTML += detail;
+            }
+            for (const driverId in payableSalaryByDriver) {
+                hasPayable = true;
+                const driver = allDrivers.find(d => d.id === driverId);
+                const detail = `
+                     <div class="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+                         <div>
+                            <p class="font-medium text-gray-800">Lương tài xế</p>
+                            <p class="text-sm text-gray-500">${driver?.name || 'Không rõ'}</p>
+                         </div>
+                         <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-orange-600">${currencyFormatter.format(payableSalaryByDriver[driverId].amount)}</span>
+                            <button class="settle-btn" data-type="payable-salary" data-id="${driverId}">Thanh Toán Hết</button>
+                        </div>
+                    </div>
+                `;
+                payableReport.innerHTML += detail;
+            }
+            if (!hasPayable) {
+                payableReport.innerHTML = '<p class="text-center p-4 text-gray-500">Không có công nợ phải trả.</p>';
+            }
+
+            // Update expense breakdown report
+            const expenseBreakdownReport = document.getElementById('expense-breakdown-report');
+            expenseBreakdownReport.innerHTML = `
+                <table class="min-w-full">
+                    <tbody class="divide-y divide-gray-200">
+                        <tr class="flex justify-between py-2"><td>Chi phí xăng dầu:</td><td class="font-medium">${currencyFormatter.format(expenseBreakdown.xangDau)}</td></tr>
+                        <tr class="flex justify-between py-2"><td>Chi phí vé cầu đường:</td><td class="font-medium">${currencyFormatter.format(expenseBreakdown.veCauDuong)}</td></tr>
+                        <tr class="flex justify-between py-2"><td>Chi phí lương:</td><td class="font-medium">${currencyFormatter.format(expenseBreakdown.luong)}</td></tr>
+                        <tr class="flex justify-between py-2"><td>Chi phí bến bãi:</td><td class="font-medium">${currencyFormatter.format(expenseBreakdown.caXe)}</td></tr>
+                        <tr class="flex justify-between py-2"><td>Chi phí phát sinh:</td><td class="font-medium">${currencyFormatter.format(expenseBreakdown.phatSinh)}</td></tr>
+                    </tbody>
+                </table>
+            `;
+        };
+        
+        const populateFilters = () => {
+            const customerFilter = document.getElementById('customer-filter');
+            const driverFilter = document.getElementById('driver-filter');
+            const tractorFilter = document.getElementById('tractor-filter');
+
+            customerFilter.innerHTML = '<option value="">Tất cả khách hàng</option>';
+            allCustomers.forEach(c => customerFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
+            driverFilter.innerHTML = '<option value="">Tất cả tài xế</option>';
+            allDrivers.forEach(d => driverFilter.innerHTML += `<option value="${d.id}">${d.name}</option>`);
+
+            tractorFilter.innerHTML = '<option value="">Tất cả đầu kéo</option>';
+            allTractors.forEach(t => tractorFilter.innerHTML += `<option value="${t.id}">${t.licensePlate}</option>`);
         };
 
         // --- Firestore Logic ---
         const setupFirestoreListeners = () => {
-            // Path is now shared, not user-specific
             const basePath = 'vantai_data/nam_hieu_company';
             
             const collections = {
@@ -589,7 +850,9 @@
                 return onSnapshot(query(col), snapshot => {
                     stateArray.length = 0;
                     snapshot.docs.forEach(doc => stateArray.push({ id: doc.id, ...doc.data() }));
-                    renderTable(tbody, stateArray, renderFn, searchInput.value);
+                    if(tbody) renderTable(tbody, stateArray, renderFn, searchInput.value);
+                    populateFilters();
+                    displayFilteredTrips();
                 }, error => console.error(`Error listening to ${col.path}:`, error));
             };
 
@@ -600,9 +863,33 @@
             
             unsubTrips = onSnapshot(query(tripsCol), snapshot => {
                 allTrips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderTable(document.getElementById('trips-table-body'), allTrips, createTripRow, document.getElementById('search-trips').value);
+                displayFilteredTrips();
                 updateFinanceDashboard(allTrips);
             }, error => console.error(`Error listening to trips:`, error));
+        };
+
+        const displayFilteredTrips = () => {
+            const searchTerm = document.getElementById('search-trips').value.toLowerCase();
+            const customerId = document.getElementById('customer-filter').value;
+            const driverId = document.getElementById('driver-filter').value;
+            const tractorId = document.getElementById('tractor-filter').value;
+
+            const filtered = allTrips.filter(trip => {
+                const customer = allCustomers.find(c => c.id === trip.customerId);
+
+                const matchesSearch = !searchTerm ||
+                    (trip.soCont && trip.soCont.toLowerCase().includes(searchTerm)) ||
+                    (customer && customer.name.toLowerCase().includes(searchTerm)) ||
+                    (trip.tuyenDuong && trip.tuyenDuong.toLowerCase().includes(searchTerm));
+
+                const matchesCustomer = !customerId || trip.customerId === customerId;
+                const matchesDriver = !driverId || trip.driverId === driverId;
+                const matchesTractor = !tractorId || trip.tractorId === tractorId;
+
+                return matchesSearch && matchesCustomer && matchesDriver && matchesTractor;
+            });
+
+            renderTable(document.getElementById('trips-table-body'), filtered, createTripRow);
         };
 
         // --- Event Listeners ---
@@ -613,9 +900,43 @@
         document.getElementById('add-trailer-btn').addEventListener('click', () => openModal('trailer'));
         
         document.getElementById('cancel-btn').addEventListener('click', closeModal);
-        document.getElementById('confirm-cancel-btn').addEventListener('click', () => { if (deleteResolver) deleteResolver(false); hideConfirmDialog(); });
-        document.getElementById('confirm-delete-btn').addEventListener('click', () => { if (deleteResolver) deleteResolver(true); hideConfirmDialog(); });
+        document.getElementById('confirm-cancel-btn').addEventListener('click', () => { if (actionResolver) actionResolver(false); hideConfirmDialog(); });
+        document.getElementById('confirm-action-btn').addEventListener('click', () => { if (actionResolver) actionResolver(true); hideConfirmDialog(); });
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+        monthFilterInput.addEventListener('change', () => updateFinanceDashboard(allTrips));
+
+        printReportBtn.addEventListener('click', () => {
+            const reportContent = document.getElementById('report-content').innerHTML;
+            const selectedMonth = monthFilterInput.value;
+            const reportTitle = selectedMonth 
+                ? `Báo Cáo Tài Chính Tháng ${selectedMonth.substring(5, 7)}/${selectedMonth.substring(0, 4)}`
+                : 'Báo Cáo Tài Chính Toàn Thời Gian';
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>${reportTitle}</title>
+                        <script src="https://cdn.tailwindcss.com"><\/script>
+                        <style>
+                            body { font-family: 'Inter', sans-serif; padding: 2rem; }
+                            @media print {
+                                .no-print { display: none; }
+                                .settle-btn { display: none; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h1 class="text-2xl font-bold mb-4">${reportTitle}</h1>
+                        ${reportContent}
+                        <button onclick="window.print()" class="no-print mt-8 bg-blue-500 text-white py-2 px-4 rounded">In báo cáo</button>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        });
+
 
         modalForm.addEventListener('submit', async e => {
             e.preventDefault();
@@ -645,35 +966,92 @@
         });
 
         document.querySelector('main').addEventListener('click', async e => {
-            const target = e.target.closest('button.edit-btn, button.delete-btn');
+            const target = e.target.closest('button');
             if (!target) return;
+            
+            const { type, id } = target.dataset;
 
-            const { id, type } = target.dataset;
-            const collections = { trip: tripsCol, customer: customersCol, driver: driversCol, tractor: tractorsCol, trailer: trailersCol };
-            const collectionRef = collections[type];
+            if (target.classList.contains('edit-btn') || target.classList.contains('delete-btn')) {
+                const collections = { trip: tripsCol, customer: customersCol, driver: driversCol, tractor: tractorsCol, trailer: trailersCol };
+                const collectionRef = collections[type];
+                if (!collectionRef) return;
 
-            if (target.classList.contains('edit-btn')) {
-                const docRef = doc(collectionRef, id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    openModal(type, true, { id: docSnap.id, ...docSnap.data() });
+                if (target.classList.contains('edit-btn')) {
+                    const docRef = doc(collectionRef, id);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        openModal(type, true, { id: docSnap.id, ...docSnap.data() });
+                    }
+                } else if (target.classList.contains('delete-btn')) {
+                    const confirmed = await showConfirmDialog('Bạn có chắc chắn muốn xóa mục này?', 'bg-red-600', 'hover:bg-red-700');
+                    if (confirmed) {
+                        try { await deleteDoc(doc(collectionRef, id)); } 
+                        catch (error) { console.error("Error deleting document: ", error); alert("Lỗi khi xóa."); }
+                    }
                 }
-            } else if (target.classList.contains('delete-btn')) {
-                const confirmed = await showConfirmDialog();
+            } else if (target.classList.contains('settle-btn')) {
+                const batch = writeBatch(db);
+                let confirmed = false;
+                
+                if (type === 'receivable') {
+                    const customer = allCustomers.find(c => c.id === id);
+                    confirmed = await showConfirmDialog(`Xác nhận đã thu toàn bộ công nợ từ khách hàng "${customer?.name}"?`, 'bg-green-600', 'hover:bg-green-700');
+                    if (confirmed) {
+                        const tripsToUpdate = allTrips.filter(t => t.customerId === id && t.paymentStatus !== 'Đã thanh toán');
+                        tripsToUpdate.forEach(trip => {
+                            const tripRef = doc(tripsCol, trip.id);
+                            batch.update(tripRef, { paymentStatus: 'Đã thanh toán' });
+                        });
+                    }
+                } else if (type === 'payable-salary') {
+                    const driver = allDrivers.find(d => d.id === id);
+                    confirmed = await showConfirmDialog(`Xác nhận đã trả toàn bộ lương cho tài xế "${driver?.name}"?`, 'bg-green-600', 'hover:bg-green-700');
+                     if (confirmed) {
+                        const tripsToUpdate = allTrips.filter(t => t.driverId === id && t.salaryPaymentStatus !== 'Đã thanh toán');
+                        tripsToUpdate.forEach(trip => {
+                            const tripRef = doc(tripsCol, trip.id);
+                            batch.update(tripRef, { salaryPaymentStatus: 'Đã thanh toán' });
+                        });
+                    }
+                } else if (type === 'payable-fuel') {
+                    confirmed = await showConfirmDialog(`Xác nhận đã trả toàn bộ tiền xăng dầu?`, 'bg-green-600', 'hover:bg-green-700');
+                    if (confirmed) {
+                        const tripsToUpdate = allTrips.filter(t => t.fuelPaymentStatus !== 'Đã thanh toán');
+                        tripsToUpdate.forEach(trip => {
+                            const tripRef = doc(tripsCol, trip.id);
+                            batch.update(tripRef, { fuelPaymentStatus: 'Đã thanh toán' });
+                        });
+                    }
+                }
+
                 if (confirmed) {
-                    try { await deleteDoc(doc(collectionRef, id)); } 
-                    catch (error) { console.error("Error deleting document: ", error); alert("Lỗi khi xóa."); }
+                    try {
+                        await batch.commit();
+                        alert('Cập nhật công nợ thành công!');
+                    } catch (error) {
+                        console.error("Lỗi khi cập nhật hàng loạt:", error);
+                        alert('Có lỗi xảy ra khi cập nhật công nợ.');
+                    }
                 }
             }
         });
 
-        // Search Listeners
-        ['trips', 'customers', 'drivers', 'tractors', 'trailers'].forEach(type => {
+        // Search and Filter Listeners
+        const tripFilters = [
+            document.getElementById('search-trips'),
+            document.getElementById('customer-filter'),
+            document.getElementById('driver-filter'),
+            document.getElementById('tractor-filter')
+        ];
+        tripFilters.forEach(filter => {
+            filter.addEventListener('input', displayFilteredTrips);
+        });
+
+        ['customers', 'drivers', 'tractors', 'trailers'].forEach(type => {
             const searchInput = document.getElementById(`search-${type}`);
             if (!searchInput) return;
             searchInput.addEventListener('input', () => {
                 switch(type) {
-                    case 'trips': renderTable(document.getElementById('trips-table-body'), allTrips, createTripRow, searchInput.value); break;
                     case 'customers': renderTable(document.getElementById('customers-table-body'), allCustomers, (item, i) => createRow(item, i, 'customer'), searchInput.value); break;
                     case 'drivers': renderTable(document.getElementById('drivers-table-body'), allDrivers, (item, i) => createRow(item, i, 'driver'), searchInput.value); break;
                     case 'tractors': renderTable(document.getElementById('tractors-table-body'), allTractors, (item, i) => createRow(item, i, 'tractor'), searchInput.value); break;
@@ -681,7 +1059,7 @@
                 }
             });
         });
-
+        
         // --- Auth Management ---
         onAuthStateChanged(auth, user => {
             if (user) {
