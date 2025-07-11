@@ -527,7 +527,6 @@
                         <td class="px-4 py-4 text-sm font-medium text-gray-900">${index + 1}</td>
                         <td class="px-4 py-4 text-sm text-gray-700 font-semibold">${item.licensePlate || ''}</td>
                         <td class="px-4 py-4 text-sm text-gray-500">${item.type || ''}</td>
-                        <td class="px-4 py-4 text-sm text-right font-medium" colspan="2"></td>
                     `;
                     break;
              }
@@ -564,14 +563,15 @@
 
         // --- Firestore Logic ---
         const setupFirestoreListeners = () => {
-            if (!userId) return;
+            // Path is now shared, not user-specific
+            const basePath = 'vantai_data/nam_hieu_company';
             
             const collections = {
-                trips: collection(db, `users/${userId}/trips`),
-                customers: collection(db, `users/${userId}/customers`),
-                drivers: collection(db, `users/${userId}/drivers`),
-                tractors: collection(db, `users/${userId}/tractors`),
-                trailers: collection(db, `users/${userId}/trailers`),
+                trips: collection(db, `${basePath}/trips`),
+                customers: collection(db, `${basePath}/customers`),
+                drivers: collection(db, `${basePath}/drivers`),
+                tractors: collection(db, `${basePath}/tractors`),
+                trailers: collection(db, `${basePath}/trailers`),
             };
             tripsCol = collections.trips;
             customersCol = collections.customers;
@@ -590,7 +590,7 @@
                     stateArray.length = 0;
                     snapshot.docs.forEach(doc => stateArray.push({ id: doc.id, ...doc.data() }));
                     renderTable(tbody, stateArray, renderFn, searchInput.value);
-                });
+                }, error => console.error(`Error listening to ${col.path}:`, error));
             };
 
             unsubCustomers = createListener(customersCol, allCustomers, document.getElementById('customers-table-body'), (item, index) => createRow(item, index, 'customer'), document.getElementById('search-customers'));
@@ -602,7 +602,7 @@
                 allTrips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTable(document.getElementById('trips-table-body'), allTrips, createTripRow, document.getElementById('search-trips').value);
                 updateFinanceDashboard(allTrips);
-            });
+            }, error => console.error(`Error listening to trips:`, error));
         };
 
         // --- Event Listeners ---
@@ -686,7 +686,7 @@
         onAuthStateChanged(auth, user => {
             if (user) {
                 userId = user.uid;
-                userIdSpan.textContent = user.isAnonymous ? 'Anonymous User' : user.uid;
+                userIdSpan.textContent = user.isAnonymous ? 'Shared Account' : user.uid;
                 setupFirestoreListeners(); 
             } else {
                 signInAnonymously(auth).catch(error => {
