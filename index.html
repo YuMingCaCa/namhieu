@@ -72,7 +72,7 @@
         .details-summary {
             list-style-type: none;
         }
-        .print-btn {
+        .report-btn, .print-btn {
             background-color: #06b6d4; /* cyan-500 */
             color: white;
             padding: 0.5rem 1rem;
@@ -80,8 +80,12 @@
             font-weight: 500;
             transition: background-color 0.2s;
         }
-        .print-btn:hover {
+        .report-btn:hover, .print-btn:hover {
             background-color: #0891b2; /* cyan-600 */
+        }
+        .report-btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -343,6 +347,24 @@
             </div>
         </div>
     </div>
+    
+    <!-- Report Options Modal -->
+    <div id="report-options-modal" class="modal-backdrop hidden">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 sm:w-1/3 p-6">
+            <h3 id="report-modal-title" class="text-lg font-bold">Tạo Báo Cáo</h3>
+            <div class="my-4 space-y-4">
+                <p>Chọn tháng để tạo báo cáo:</p>
+                <input type="month" id="report-modal-month" class="p-2 border rounded-lg w-full">
+                <input type="hidden" id="report-modal-target-id">
+                <input type="hidden" id="report-modal-target-name">
+                <input type="hidden" id="report-modal-type">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="report-modal-cancel-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Hủy</button>
+                <button id="report-modal-generate-btn" class="print-btn">Tạo & In</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         // Firebase Imports
@@ -386,6 +408,7 @@
         const confirmActionBtn = document.getElementById('confirm-action-btn');
         const monthFilterInput = document.getElementById('report-month-filter');
         const printReportBtn = document.getElementById('print-report-btn');
+        const reportOptionsModal = document.getElementById('report-options-modal');
 
         // --- App State ---
         let actionResolver = null;
@@ -617,8 +640,10 @@
              const row = document.createElement('tr');
              row.className = "hover:bg-gray-50";
              let content = '';
+             let reportButton = '';
              switch(type) {
                 case 'customer':
+                    reportButton = `<button class="report-btn ml-4" data-type="customer-report" data-id="${item.id}" data-name="${item.name}">Báo cáo</button>`;
                     content = `
                         <td class="px-4 py-4 text-sm font-medium text-gray-900">${index + 1}</td>
                         <td class="px-4 py-4 text-sm text-gray-700 font-semibold">${item.name || ''}</td>
@@ -627,6 +652,7 @@
                     `;
                     break;
                 case 'driver':
+                    reportButton = `<button class="report-btn ml-4" data-type="driver-report" data-id="${item.id}" data-name="${item.name}">Báo cáo lương</button>`;
                     content = `
                         <td class="px-4 py-4 text-sm font-medium text-gray-900">${index + 1}</td>
                         <td class="px-4 py-4 text-sm text-gray-700 font-semibold">${item.name || ''}</td>
@@ -654,6 +680,7 @@
                 <td class="px-4 py-4 text-right text-sm font-medium">
                     <button class="edit-btn text-indigo-600 hover:text-indigo-900" data-type="${type}" data-id="${item.id}">Sửa</button>
                     <button class="delete-btn text-red-600 hover:text-red-900 ml-4" data-type="${type}" data-id="${item.id}">Xóa</button>
+                    ${reportButton}
                 </td>
              `;
              return row;
@@ -850,7 +877,7 @@
                 return onSnapshot(query(col), snapshot => {
                     stateArray.length = 0;
                     snapshot.docs.forEach(doc => stateArray.push({ id: doc.id, ...doc.data() }));
-                    if(tbody) renderTable(tbody, stateArray, renderFn, searchInput.value);
+                    if(tbody) renderTable(tbody, stateArray, renderFn);
                     populateFilters();
                     displayFilteredTrips();
                 }, error => console.error(`Error listening to ${col.path}:`, error));
@@ -969,7 +996,17 @@
             const target = e.target.closest('button');
             if (!target) return;
             
-            const { type, id } = target.dataset;
+            const { type, id, name } = target.dataset;
+
+            if (target.classList.contains('report-btn')) {
+                document.getElementById('report-modal-title').textContent = `Tạo Báo Cáo cho ${name}`;
+                document.getElementById('report-modal-target-id').value = id;
+                document.getElementById('report-modal-target-name').value = name;
+                document.getElementById('report-modal-type').value = type;
+                document.getElementById('report-modal-month').value = '';
+                reportOptionsModal.classList.remove('hidden');
+                return;
+            }
 
             if (target.classList.contains('edit-btn') || target.classList.contains('delete-btn')) {
                 const collections = { trip: tripsCol, customer: customersCol, driver: driversCol, tractor: tractorsCol, trailer: trailersCol };
@@ -1036,6 +1073,132 @@
             }
         });
 
+        // Report Modal Listeners
+        document.getElementById('report-modal-cancel-btn').addEventListener('click', () => reportOptionsModal.classList.add('hidden'));
+        document.getElementById('report-modal-generate-btn').addEventListener('click', () => {
+            const type = document.getElementById('report-modal-type').value;
+            const id = document.getElementById('report-modal-target-id').value;
+            const name = document.getElementById('report-modal-target-name').value;
+            const month = document.getElementById('report-modal-month').value;
+
+            if (!month) {
+                alert('Vui lòng chọn tháng để tạo báo cáo.');
+                return;
+            }
+
+            let reportTitle = '';
+            let reportHTML = '';
+
+            if (type === 'customer-report') {
+                reportTitle = `Báo Cáo Chuyến Hàng - ${name} - Tháng ${month.substring(5,7)}/${month.substring(0,4)}`;
+                const customerTrips = allTrips.filter(t => t.customerId === id && t.ngayDi && t.ngayDi.startsWith(month));
+                let totalRevenue = 0;
+                let totalDebt = 0;
+                
+                let tableRows = '';
+                customerTrips.forEach((trip, index) => {
+                    const revenue = parseFloat(trip.cuocXe) || 0;
+                    totalRevenue += revenue;
+                    if (trip.paymentStatus !== 'Đã thanh toán') {
+                        totalDebt += revenue;
+                    }
+                    tableRows += `
+                        <tr class="border-b">
+                            <td class="p-2">${index + 1}</td>
+                            <td class="p-2">${trip.soCont || ''}</td>
+                            <td class="p-2">${trip.tuyenDuong || ''}</td>
+                            <td class="p-2">${trip.ngayDi}</td>
+                            <td class="p-2 text-right">${currencyFormatter.format(revenue)}</td>
+                            <td class="p-2">${trip.paymentStatus || 'Chưa thanh toán'}</td>
+                        </tr>
+                    `;
+                });
+                
+                reportHTML = `
+                    <h2 class="text-xl font-bold mb-4">Đối tượng: ${name}</h2>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-black">
+                                <th class="p-2">STT</th><th class="p-2">Số Cont</th><th class="p-2">Tuyến Đường</th><th class="p-2">Ngày Đi</th><th class="p-2 text-right">Cước Phí</th><th class="p-2">Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                    <div class="mt-4 text-right">
+                        <p><strong>Tổng cước:</strong> ${currencyFormatter.format(totalRevenue)}</p>
+                        <p><strong>Còn nợ:</strong> ${currencyFormatter.format(totalDebt)}</p>
+                    </div>
+                `;
+            } else if (type === 'driver-report') {
+                reportTitle = `Báo Cáo Lương - ${name} - Tháng ${month.substring(5,7)}/${month.substring(0,4)}`;
+                const driverTrips = allTrips.filter(t => t.driverId === id && t.ngayDi && t.ngayDi.startsWith(month));
+                let totalSalary = 0;
+                let totalDebt = 0;
+
+                let tableRows = '';
+                driverTrips.forEach((trip, index) => {
+                    const salary = parseFloat(trip.chiPhiLuong) || 0;
+                    totalSalary += salary;
+                     if (trip.salaryPaymentStatus !== 'Đã thanh toán') {
+                        totalDebt += salary;
+                    }
+                    tableRows += `
+                        <tr class="border-b">
+                            <td class="p-2">${index + 1}</td>
+                            <td class="p-2">${trip.soCont || ''}</td>
+                            <td class="p-2">${trip.tuyenDuong || ''}</td>
+                            <td class="p-2">${trip.ngayDi}</td>
+                            <td class="p-2 text-right">${currencyFormatter.format(salary)}</td>
+                            <td class="p-2">${trip.salaryPaymentStatus || 'Chưa thanh toán'}</td>
+                        </tr>
+                    `;
+                });
+
+                 reportHTML = `
+                    <h2 class="text-xl font-bold mb-4">Tài xế: ${name}</h2>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-black">
+                                <th class="p-2">STT</th><th class="p-2">Số Cont</th><th class="p-2">Tuyến Đường</th><th class="p-2">Ngày Đi</th><th class="p-2 text-right">Tiền Lương</th><th class="p-2">Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                    <div class="mt-4 text-right">
+                        <p><strong>Tổng lương:</strong> ${currencyFormatter.format(totalSalary)}</p>
+                        <p><strong>Công ty còn nợ:</strong> ${currencyFormatter.format(totalDebt)}</p>
+                    </div>
+                `;
+            }
+            
+            generatePrintableReport(reportTitle, reportHTML);
+            reportOptionsModal.classList.add('hidden');
+        });
+
+        const generatePrintableReport = (title, content) => {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>${title}</title>
+                        <script src="https://cdn.tailwindcss.com"><\/script>
+                        <style>
+                            body { font-family: 'Inter', sans-serif; padding: 2rem; }
+                            @media print {
+                                .no-print { display: none; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h1 class="text-2xl font-bold mb-4">${title}</h1>
+                        ${content}
+                        <button onclick="window.print()" class="no-print mt-8 bg-blue-500 text-white py-2 px-4 rounded">In báo cáo</button>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        };
+
         // Search and Filter Listeners
         const tripFilters = [
             document.getElementById('search-trips'),
@@ -1051,12 +1214,9 @@
             const searchInput = document.getElementById(`search-${type}`);
             if (!searchInput) return;
             searchInput.addEventListener('input', () => {
-                switch(type) {
-                    case 'customers': renderTable(document.getElementById('customers-table-body'), allCustomers, (item, i) => createRow(item, i, 'customer'), searchInput.value); break;
-                    case 'drivers': renderTable(document.getElementById('drivers-table-body'), allDrivers, (item, i) => createRow(item, i, 'driver'), searchInput.value); break;
-                    case 'tractors': renderTable(document.getElementById('tractors-table-body'), allTractors, (item, i) => createRow(item, i, 'tractor'), searchInput.value); break;
-                    case 'trailers': renderTable(document.getElementById('trailers-table-body'), allTrailers, (item, i) => createRow(item, i, 'trailer'), searchInput.value); break;
-                }
+                const stateArray = { customers: allCustomers, drivers: allDrivers, tractors: allTractors, trailers: allTrailers }[type];
+                const tbody = document.getElementById(`${type}-table-body`);
+                renderTable(tbody, stateArray, (item, i) => createRow(item, i, type));
             });
         });
         
