@@ -37,6 +37,7 @@
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                 <div>
+                    <!-- === SỬA ĐỔI 1: Đổi tên công ty tại đây === -->
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Hệ Thống Quản Lý Vận Tải Công Ty Nam Hiếu</h1>
                     <p class="mt-1 text-sm text-gray-600">Quản lý toàn diện: Chuyến hàng, Đối tác, Đội xe và Tài chính.</p>
                 </div>
@@ -288,6 +289,9 @@
         import { getFirestore, collection, doc, addDoc, setDoc, getDoc, deleteDoc, onSnapshot, query, writeBatch, setLogLevel } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // --- Config and Initialization ---
+        // === SỬA ĐỔI 2: Thêm biến để xác định ID công ty ===
+        const COMPANY_ID = 'nam_hieu_company'; // <-- QUAN TRỌNG: Đặt ID riêng cho công ty này
+
         const firebaseConfig = {
             apiKey: "AIzaSyDfEfoZ2T5p1f0xvj5MlQXmA_rPhMl9aok",
             authDomain: "vantainamhieu.firebaseapp.com",
@@ -780,7 +784,8 @@
 
         // --- Firestore Logic ---
         const setupFirestoreListeners = () => {
-            const basePath = 'vantai_data/nam_hieu_company';
+            // === SỬA ĐỔI 3: Sử dụng biến COMPANY_ID để tạo đường dẫn động ===
+            const basePath = `vantai_data/${COMPANY_ID}`;
             
             const collections = {
                 trips: collection(db, `${basePath}/trips`),
@@ -874,7 +879,7 @@
 
             const collections = { trip: 'trips', customer: 'customers', partner: 'partners', driver: 'drivers', tractor: 'tractors', trailer: 'trailers' };
             const collectionName = collections[type];
-            const collectionRef = collection(db, `vantai_data/nam_hieu_company/${collectionName}`);
+            const collectionRef = collection(db, `vantai_data/${COMPANY_ID}/${collectionName}`);
 
             try {
                 if (id) { await setDoc(doc(collectionRef, id), data, { merge: true }); } 
@@ -896,7 +901,7 @@
             const collections = { trip: 'trips', customer: 'customers', partner: 'partners', driver: 'drivers', tractor: 'tractors', trailer: 'trailers' };
             const collectionName = collections[type];
             if (collectionName) {
-                const collectionRef = collection(db, `vantai_data/nam_hieu_company/${collectionName}`);
+                const collectionRef = collection(db, `vantai_data/${COMPANY_ID}/${collectionName}`);
                 if (target.classList.contains('edit-btn')) {
                     const docSnap = await getDoc(doc(collectionRef, id));
                     if (docSnap.exists()) {
@@ -933,7 +938,7 @@
 
                 if (confirmed && tripsToUpdate.length > 0) {
                     tripsToUpdate.forEach(trip => {
-                        const tripRef = doc(db, `vantai_data/nam_hieu_company/trips/${trip.id}`);
+                        const tripRef = doc(db, `vantai_data/${COMPANY_ID}/trips/${trip.id}`);
                         batch.update(tripRef, fieldToUpdate);
                     });
                     await batch.commit();
